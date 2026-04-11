@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Basic Budgeting Notebook</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background-color: #f0f2f5;
+      color: #333;
+    }
+
+    header {
+      background-color: #1a2e4a;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 28px;
+      margin-bottom: 5px;
+    }
+
+    header p {
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .card h2 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid;
+    }
+
+    .income h2 { border-color: #27ae60; color: #27ae60; }
+    .bills h2 { border-color: #e74c3c; color: #e74c3c; }
+    .savings h2 { border-color: #2980b9; color: #2980b9; }
+    .debt h2 { border-color: #e67e22; color: #e67e22; }
+
+    .item-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+
+    .item-row input[type="text"] {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .item-row input[type="number"] {
+      width: 110px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .remove-btn {
+      background: #fee;
+      color: #e74c3c;
+      border: 1px solid #e74c3c;
+      border-radius: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .add-btn {
+      background: none;
+      border: 1px dashed #aaa;
+      border-radius: 6px;
+      padding: 8px;
+      width: 100%;
+      cursor: pointer;
+      color: #888;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .add-btn:hover {
+      background: #f9f9f9;
+    }
+
+    .section-total {
+      text-align: right;
+      font-weight: bold;
+      font-size: 16px;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid #eee;
+    }
+
+    .leftover-card {
+      background: #1a2e4a;
+      color: white;
+      border-radius: 12px;
+      padding: 25px;
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .leftover-card h2 {
+      font-size: 16px;
+      opacity: 0.8;
+      margin-bottom: 10px;
+    }
+
+    .leftover-amount {
+      font-size: 42px;
+      font-weight: bold;
+    }
+
+    .leftover-amount.negative {
+      color: #e74c3c;
+    }
+
+    .leftover-amount.positive {
+      color: #27ae60;
+    }
+
+    @media (max-width: 600px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Basic Budgeting Notebook</h1>
+    <p id="current-month"></p>
+  </header>
+
+  <div class="container">
+    <div class="grid">
+
+      <div class="card income">
+        <h2>Income</h2>
+        <div id="income-list"></div>
+        <button class="add-btn" onclick="addItem('income')">+ Add Income</button>
+        <div class="section-total" style="color: #27ae60;">
+          Total: $<span id="income-total">0.00</span>
+        </div>
+      </div>
+
+      <div class="card savings">
+        <h2>Planned Savings</h2>
+        <div id="savings-list"></div>
+        <button class="add-btn" onclick="addItem('savings')">+ Add Savings</button>
+        <div class="section-total" style="color: #2980b9;">
+          Total: $<span id="savings-total">0.00</span>
+        </div>
+      </div>
+
+      <div class="card bills">
+        <h2>Bills</h2>
+        <div id="bills-list"></div>
+        <button class="add-btn" onclick="addItem('bills')">+ Add Bill</button>
+        <div class="section-total" style="color: #e74c3c;">
+          Total: $<span id="bills-total">0.00</span>
+        </div>
+      </div>
+
+      <div class="card debt">
+        <h2>Debt</h2>
+        <div id="debt-list"></div>
+        <button class="add-btn" onclick="addItem('debt')">+ Add Debt</button>
+        <div class="section-total" style="color: #e67e22;">
+          Total: $<span id="debt-total">0.00</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="leftover-card">
+      <h2>Left Over This Month</h2>
+      <div class="leftover-amount positive" id="leftover">$0.00</div>
+    </div>
+
+  </div>
+
+  <script>
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var now = new Date();
+    document.getElementById('current-month').textContent = months[now.getMonth()] + ' ' + now.getFullYear();
+
+    function addItem(section) {
+      var list = document.getElementById(section + '-list');
+      var row = document.createElement('div');
+      row.className = 'item-row';
+      row.innerHTML = '<input type="text" placeholder="Description"> <input type="number" placeholder="$0.00" oninput="calculate()"> <button class="remove-btn" onclick="this.parentElement.remove(); calculate()">✕</button>';
+      list.appendChild(row);
+    }
+
+    function calculate() {
+      var sections = ['income', 'savings', 'bills', 'debt'];
+      var totals = {};
+      sections.forEach(function(section) {
+        var inputs = document.querySelectorAll('#' + section + '-list input[type="number"]');
+        var total = 0;
+        inputs.forEach(function(input) {
+          total += parseFloat(input.value) || 0;
+        });
+        totals[section] = total;
+        document.getElementById(section + '-total').textContent = total.toFixed(2);
+      });
+      var leftover = totals['income'] - totals['bills'];
+      var leftoverEl = document.getElementById('leftover');
+      leftoverEl.textContent = '$' + leftover.toFixed(2);
+      if (leftover < 0) {
+        leftoverEl.className = 'leftover-amount negative';
+      } else {
+        leftoverEl.className = 'leftover-amount positive';
+      }
+    }
+  </script>
+
+</body>
+</html>
