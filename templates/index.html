@@ -160,9 +160,16 @@
 <body>
 
   <header>
-    <h1>Basic Budgeting Notebook</h1>
+    <h1>MyBudgetPlan</h1>
     <p id="current-month"></p>
-  </header>
+</header>
+
+{% if session.user == 'demo' %}
+<div style="background: #f39c12; color: white; text-align: center; padding: 10px; font-size: 14px;">
+    You are in demo mode — your data will not be saved. <a href="/signup" style="color: white; font-weight: bold; text-decoration: underline;">Sign up free</a> to save your budget.
+</div>
+{% endif %}
+
 
   <div class="container">
     <div class="grid">
