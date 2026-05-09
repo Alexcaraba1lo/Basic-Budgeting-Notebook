@@ -29,20 +29,28 @@ def dashboard():
     if session.get('user_id') == 'demo':
         return render_template('dashboard.html', user=session['user'], stats={
             'income': 0, 'bills': 0, 'savings': 0, 'debt': 0, 'leftover': 0, 'item_count': 0
-        }, goals=[], net_worth=0, total_assets=0, total_liabilities=0)
+        }, last_stats={'income': 0, 'bills': 0, 'savings': 0, 'debt': 0, 'leftover': 0}, goals=[], net_worth=0, total_assets=0, total_liabilities=0)
     
     from datetime import datetime
     now = datetime.now()
-    response = supabase.table('budget_items').select('*').eq('user_id', session['user_id']).eq('month', now.month).eq('year', now.year).execute()
     
+    response = supabase.table('budget_items').select('*').eq('user_id', session['user_id']).eq('month', now.month).eq('year', now.year).execute()
     items = response.data
     stats = {'income': 0, 'bills': 0, 'savings': 0, 'debt': 0, 'item_count': len(items)}
-    
     for item in items:
         if item['section'] in stats:
             stats[item['section']] += item['amount']
-    
     stats['leftover'] = stats['income'] - stats['bills']
+    
+    last_month = now.month - 1 if now.month > 1 else 12
+    last_year = now.year if now.month > 1 else now.year - 1
+    last_response = supabase.table('budget_items').select('*').eq('user_id', session['user_id']).eq('month', last_month).eq('year', last_year).execute()
+    last_items = last_response.data
+    last_stats = {'income': 0, 'bills': 0, 'savings': 0, 'debt': 0}
+    for item in last_items:
+        if item['section'] in last_stats:
+            last_stats[item['section']] += item['amount']
+    last_stats['leftover'] = last_stats['income'] - last_stats['bills']
     
     goals_response = supabase.table('savings_goals').select('*').eq('user_id', session['user_id']).execute()
     
@@ -52,7 +60,7 @@ def dashboard():
     total_liabilities = sum(i['amount'] for i in networth_items if i['type'] == 'liability')
     net_worth = total_assets - total_liabilities
     
-    return render_template('dashboard.html', user=session['user'], stats=stats, goals=goals_response.data, net_worth=net_worth, total_assets=total_assets, total_liabilities=total_liabilities)
+    return render_template('dashboard.html', user=session['user'], stats=stats, last_stats=last_stats, goals=goals_response.data, net_worth=net_worth, total_assets=total_assets, total_liabilities=total_liabilities)
 
 @app.route('/budget')
 def budget():
@@ -285,4 +293,4 @@ def delete_networth():
     return jsonify({'status': 'deleted'})
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0')

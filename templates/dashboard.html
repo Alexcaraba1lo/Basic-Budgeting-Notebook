@@ -3,6 +3,12 @@
 <head>
   <title>Dashboard - MyBudgetPlan</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MyBudgetPlan">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
+  <meta name="theme-color" content="#1a2e4a">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
     body { background-color: #f0f2f5; color: #333; }
@@ -11,9 +17,10 @@
     .header-top h1 { font-size: 22px; }
     .header-links { display: flex; gap: 20px; }
     .header-links a { color: white; text-decoration: none; font-size: 14px; opacity: 0.8; }
-    nav { background: rgba(0,0,0,0.2); display: flex; gap: 4px; padding: 0 24px; }
-    nav a { color: white; text-decoration: none; padding: 12px 18px; font-size: 14px; opacity: 0.7; }
+    nav { background: rgba(0,0,0,0.2); display: flex; gap: 4px; padding: 0 24px; overflow-x: auto; }
+    nav a { color: white; text-decoration: none; padding: 12px 14px; font-size: 14px; opacity: 0.7; white-space: nowrap; }
     nav a.active { opacity: 1; border-bottom: 3px solid #2ecc71; }
+    @media (max-width: 600px) { nav { padding: 0 12px; } nav a { padding: 12px 10px; font-size: 13px; } }
     .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
     .welcome { text-align: center; margin-bottom: 30px; }
     .welcome h2 { font-size: 22px; color: #1a2e4a; margin-bottom: 6px; }
@@ -34,7 +41,16 @@
     .summary-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-top: 24px; }
     .summary-card a { text-decoration: none; }
     .summary-card h2 { font-size: 16px; color: #1a2e4a; margin-bottom: 16px; }
-    @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) { 
+      .stats-grid { gap: 10px; } 
+      .stat-card { padding: 14px; }
+      .stat-card .value { font-size: 18px; }
+      .stat-card .label { font-size: 10px; }
+      .leftover-hero { padding: 30px 16px; }
+      .leftover-hero .amount { font-size: 40px; }
+      .welcome h2 { font-size: 18px; }
+      .welcome p { font-size: 13px; }
+    }
   </style>
 </head>
 <body>
@@ -50,7 +66,7 @@
       <a href="/dashboard" class="active">Dashboard</a>
       <a href="/budget">Budget</a>
       <a href="/goals">Goals</a>
-      <a href="/networth">Net Worth</a>
+      <a href="/networth" style="white-space: nowrap;">Net Worth</a>
     </nav>
   </header>
 
@@ -71,18 +87,42 @@
       <div class="stat-card income">
         <div class="label">Income</div>
         <div class="value">${{ "{:,.2f}".format(stats.income) }}</div>
+        {% if last_stats.income > 0 %}
+        <div style="font-size: 11px; color: {% if stats.income >= last_stats.income %}#27ae60{% else %}#e74c3c{% endif %}; margin-top: 4px;">
+          {% if stats.income > last_stats.income %}↑{% elif stats.income < last_stats.income %}↓{% else %}={% endif %}
+          {{ "{:,.2f}".format(((stats.income - last_stats.income) / last_stats.income * 100) if last_stats.income > 0 else 0) }}% vs last month
+        </div>
+        {% endif %}
       </div>
       <div class="stat-card bills">
         <div class="label">Bills</div>
         <div class="value">${{ "{:,.2f}".format(stats.bills) }}</div>
+        {% if last_stats.bills > 0 %}
+        <div style="font-size: 11px; color: {% if stats.bills <= last_stats.bills %}#27ae60{% else %}#e74c3c{% endif %}; margin-top: 4px;">
+          {% if stats.bills > last_stats.bills %}↑{% elif stats.bills < last_stats.bills %}↓{% else %}={% endif %}
+          {{ "{:,.2f}".format(((stats.bills - last_stats.bills) / last_stats.bills * 100) if last_stats.bills > 0 else 0) }}% vs last month
+        </div>
+        {% endif %}
       </div>
       <div class="stat-card savings">
         <div class="label">Savings</div>
         <div class="value">${{ "{:,.2f}".format(stats.savings) }}</div>
+        {% if last_stats.savings > 0 %}
+        <div style="font-size: 11px; color: {% if stats.savings >= last_stats.savings %}#27ae60{% else %}#e74c3c{% endif %}; margin-top: 4px;">
+          {% if stats.savings > last_stats.savings %}↑{% elif stats.savings < last_stats.savings %}↓{% else %}={% endif %}
+          {{ "{:,.2f}".format(((stats.savings - last_stats.savings) / last_stats.savings * 100) if last_stats.savings > 0 else 0) }}% vs last month
+        </div>
+        {% endif %}
       </div>
       <div class="stat-card debt">
         <div class="label">Debt</div>
         <div class="value">${{ "{:,.2f}".format(stats.debt) }}</div>
+        {% if last_stats.debt > 0 %}
+        <div style="font-size: 11px; color: {% if stats.debt <= last_stats.debt %}#27ae60{% else %}#e74c3c{% endif %}; margin-top: 4px;">
+          {% if stats.debt > last_stats.debt %}↑{% elif stats.debt < last_stats.debt %}↓{% else %}={% endif %}
+          {{ "{:,.2f}".format(((stats.debt - last_stats.debt) / last_stats.debt * 100) if last_stats.debt > 0 else 0) }}% vs last month
+        </div>
+        {% endif %}
       </div>
     </div>
 
