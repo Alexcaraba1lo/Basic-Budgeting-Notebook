@@ -159,9 +159,14 @@
 </head>
 <body>
 
-    <header style="position: relative;">
+  <header style="position: relative;">
     <h1>MyBudgetPlan</h1>
-    <p id="current-month"></p>
+    <div style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 8px;">
+      <button onclick="changeMonth(-1)" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 14px;">←</button>
+      <p id="current-month" style="margin: 0;"></p>
+      <button onclick="changeMonth(1)" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 14px;">→</button>
+    </div>
+    <a href="/profile" style="position: absolute; top: 20px; right: 90px; color: white; text-decoration: none; font-size: 14px; opacity: 0.8;">Profile</a>
     <a href="/logout" style="position: absolute; top: 20px; right: 20px; color: white; text-decoration: none; font-size: 14px; opacity: 0.8;">Logout</a>
 </header>
 
@@ -221,12 +226,20 @@
   </div>
 
   <script>
-  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 var now = new Date();
-document.getElementById('current-month').textContent = months[now.getMonth()] + ' ' + now.getFullYear();
+var currentMonth = now.getMonth() + 1;
+var currentYear = now.getFullYear();
 
-window.onload = function() {
-    fetch('/get_items')
+function updateMonthDisplay() {
+    document.getElementById('current-month').textContent = months[currentMonth - 1] + ' ' + currentYear;
+}
+
+function loadItems() {
+    document.querySelectorAll('[id$="-list"]').forEach(function(el) {
+        el.innerHTML = '';
+    });
+    fetch('/get_items?month=' + currentMonth + '&year=' + currentYear)
         .then(r => r.json())
         .then(items => {
             items.forEach(function(item) {
@@ -234,6 +247,25 @@ window.onload = function() {
             });
             calculate();
         });
+}
+
+function changeMonth(direction) {
+    currentMonth += direction;
+    if (currentMonth > 12) {
+        currentMonth = 1;
+        currentYear += 1;
+    }
+    if (currentMonth < 1) {
+        currentMonth = 12;
+        currentYear -= 1;
+    }
+    updateMonthDisplay();
+    loadItems();
+}
+
+window.onload = function() {
+    updateMonthDisplay();
+    loadItems();
 };
 
 function addItem(section) {
@@ -260,7 +292,7 @@ function saveItem(el) {
     fetch('/save_item', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({section: section, name: name, amount: amount})
+        body: JSON.stringify({section: section, name: name, amount: amount, month: currentMonth, year: currentYear})
     })
     .then(r => r.json())
     .then(data => {

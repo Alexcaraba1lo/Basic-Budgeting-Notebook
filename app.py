@@ -71,13 +71,15 @@ def save_item():
     data = request.json
     from datetime import datetime
     now = datetime.now()
+    month = int(data.get('month', now.month))
+    year = int(data.get('year', now.year))
     response = supabase.table('budget_items').insert({
         'user_id': session['user_id'],
         'section': data['section'],
         'name': data['name'],
         'amount': data['amount'],
-        'month': now.month,
-        'year': now.year
+        'month': month,
+        'year': year
     }).execute()
     return jsonify({'status': 'saved', 'id': response.data[0]['id']})
 
@@ -96,8 +98,39 @@ def get_items():
         return jsonify([])
     from datetime import datetime
     now = datetime.now()
-    response = supabase.table('budget_items').select('*').eq('user_id', session['user_id']).eq('month', now.month).eq('year', now.year).execute()
+    month = int(request.args.get('month', now.month))
+    year = int(request.args.get('year', now.year))
+    response = supabase.table('budget_items').select('*').eq('user_id', session['user_id']).eq('month', month).eq('year', year).execute()
     return jsonify(response.data)
+
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if 'user' not in session or session.get('user') == 'demo':
+        return redirect(url_for('login'))
+    
+    message = None
+    error = None
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'change_password':
+            new_password = request.form.get('new_password')
+            try:
+                supabase.auth.update_user({"password": new_password})
+                message = 'Password updated successfully'
+            except Exception as e:
+                error = 'Could not update password'
+        
+        elif action == 'delete_account':
+            try:
+                supabase.table('budget_items').delete().eq('user_id', session['user_id']).execute()
+                session.clear()
+                return redirect(url_for('login', message='Account deleted successfully'))
+            except Exception as e:
+                error = 'Could not delete account'
+    
+    return render_template('profile.html', user=session['user'], message=message, error=error)
 
 if __name__ == '__main__':
     app.run(debug=True)
