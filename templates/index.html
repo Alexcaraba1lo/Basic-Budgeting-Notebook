@@ -159,9 +159,10 @@
 </head>
 <body>
 
-  <header>
+    <header style="position: relative;">
     <h1>MyBudgetPlan</h1>
     <p id="current-month"></p>
+    <a href="/logout" style="position: absolute; top: 20px; right: 20px; color: white; text-decoration: none; font-size: 14px; opacity: 0.8;">Logout</a>
 </header>
 
 {% if session.user == 'demo' %}
@@ -220,39 +221,88 @@
   </div>
 
   <script>
-    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    var now = new Date();
-    document.getElementById('current-month').textContent = months[now.getMonth()] + ' ' + now.getFullYear();
+  var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+var now = new Date();
+document.getElementById('current-month').textContent = months[now.getMonth()] + ' ' + now.getFullYear();
 
-    function addItem(section) {
-      var list = document.getElementById(section + '-list');
-      var row = document.createElement('div');
-      row.className = 'item-row';
-      row.innerHTML = '<input type="text" placeholder="Description"> <input type="number" placeholder="$0.00" oninput="calculate()"> <button class="remove-btn" onclick="this.parentElement.remove(); calculate()">✕</button>';
-      list.appendChild(row);
+window.onload = function() {
+    fetch('/get_items')
+        .then(r => r.json())
+        .then(items => {
+            items.forEach(function(item) {
+                addItemToPage(item.section, item.name, item.amount, item.id);
+            });
+            calculate();
+        });
+};
+
+function addItem(section) {
+    addItemToPage(section, '', '', null);
+}
+
+function addItemToPage(section, name, amount, id) {
+    var list = document.getElementById(section + '-list');
+    var row = document.createElement('div');
+    row.className = 'item-row';
+    row.dataset.id = id || '';
+    row.innerHTML = '<input type="text" placeholder="Description" value="' + (name || '') + '" onblur="saveItem(this)"> <input type="number" placeholder="$0.00" value="' + (amount || '') + '" oninput="calculate()" onblur="saveItem(this)"> <button class="remove-btn" onclick="removeItem(this)">✕</button>';
+    list.appendChild(row);
+    calculate();
+}
+
+function saveItem(el) {
+    var row = el.closest('.item-row');
+    var section = row.closest('[id$="-list"]').id.replace('-list', '');
+    var name = row.querySelector('input[type="text"]').value;
+    var amount = parseFloat(row.querySelector('input[type="number"]').value) || 0;
+    if (!name || !amount) return;
+    if (row.dataset.id) return;
+    fetch('/save_item', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({section: section, name: name, amount: amount})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.id) row.dataset.id = data.id;
+    });
+}
+
+function removeItem(btn) {
+    var row = btn.parentElement;
+    var id = row.dataset.id;
+    if (id) {
+        fetch('/delete_item', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id: id})
+        });
     }
+    row.remove();
+    calculate();
+}
 
-    function calculate() {
-      var sections = ['income', 'savings', 'bills', 'debt'];
-      var totals = {};
-      sections.forEach(function(section) {
+function calculate() {
+    var sections = ['income', 'savings', 'bills', 'debt'];
+    var totals = {};
+    sections.forEach(function(section) {
         var inputs = document.querySelectorAll('#' + section + '-list input[type="number"]');
         var total = 0;
         inputs.forEach(function(input) {
-          total += parseFloat(input.value) || 0;
+            total += parseFloat(input.value) || 0;
         });
         totals[section] = total;
         document.getElementById(section + '-total').textContent = total.toFixed(2);
-      });
-      var leftover = totals['income'] - totals['bills'];
-      var leftoverEl = document.getElementById('leftover');
-      leftoverEl.textContent = '$' + leftover.toFixed(2);
-      if (leftover < 0) {
+    });
+    var leftover = totals['income'] - totals['bills'];
+    var leftoverEl = document.getElementById('leftover');
+    leftoverEl.textContent = '$' + leftover.toFixed(2);
+    if (leftover < 0) {
         leftoverEl.className = 'leftover-amount negative';
-      } else {
+    } else {
         leftoverEl.className = 'leftover-amount positive';
-      }
     }
+}
   </script>
 
 </body>
