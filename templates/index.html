@@ -159,16 +159,26 @@
 </head>
 <body>
 
-  <header style="position: relative;">
-    <h1>MyBudgetPlan</h1>
-    <div style="display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 8px;">
+  <header>
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 16px 24px;">
+      <h1 style="font-size: 22px;">MyBudgetPlan</h1>
+      <div style="display: flex; gap: 20px;">
+        <a href="/profile" style="color: white; text-decoration: none; font-size: 14px; opacity: 0.8;">Profile</a>
+        <a href="/logout" style="color: white; text-decoration: none; font-size: 14px; opacity: 0.8;">Logout</a>
+      </div>
+    </div>
+    <nav style="background: rgba(0,0,0,0.2); display: flex; gap: 4px; padding: 0 24px;">
+      <a href="/dashboard" style="color: white; text-decoration: none; padding: 12px 18px; font-size: 14px; opacity: 0.7;">Dashboard</a>
+      <a href="/budget" style="color: white; text-decoration: none; padding: 12px 18px; font-size: 14px; opacity: 1; border-bottom: 3px solid #2ecc71;">Budget</a>
+      <a href="/goals" style="color: white; text-decoration: none; padding: 12px 18px; font-size: 14px; opacity: 0.7;">Goals</a>
+      <a href="/networth" style="color: white; text-decoration: none; padding: 12px 18px; font-size: 14px; opacity: 0.7;">Net Worth</a>
+    </nav>
+    <div style="display: flex; align-items: center; justify-content: center; gap: 16px; padding: 16px;">
       <button onclick="changeMonth(-1)" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 14px;">←</button>
-      <p id="current-month" style="margin: 0;"></p>
+      <p id="current-month" style="margin: 0; color: white;"></p>
       <button onclick="changeMonth(1)" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 14px;">→</button>
     </div>
-    <a href="/profile" style="position: absolute; top: 20px; right: 90px; color: white; text-decoration: none; font-size: 14px; opacity: 0.8;">Profile</a>
-    <a href="/logout" style="position: absolute; top: 20px; right: 20px; color: white; text-decoration: none; font-size: 14px; opacity: 0.8;">Logout</a>
-</header>
+  </header>
 
 {% if session.user == 'demo' %}
 <div style="background: #f39c12; color: white; text-align: center; padding: 10px; font-size: 14px;">

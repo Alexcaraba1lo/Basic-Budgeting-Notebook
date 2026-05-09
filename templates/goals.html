@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Savings Goals - MyBudgetPlan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { background-color: #f0f2f5; color: #333; }
+    header { background-color: #1a2e4a; color: white; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; }
+    .header-top h1 { font-size: 22px; }
+    .header-links { display: flex; gap: 20px; }
+    .header-links a { color: white; text-decoration: none; font-size: 14px; opacity: 0.8; }
+    nav { background: rgba(0,0,0,0.2); display: flex; gap: 4px; padding: 0 24px; }
+    nav a { color: white; text-decoration: none; padding: 12px 18px; font-size: 14px; opacity: 0.7; }
+    nav a.active { opacity: 1; border-bottom: 3px solid #2ecc71; }
+    .container { max-width: 700px; margin: 30px auto; padding: 0 20px; }
+    .add-card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 20px; }
+    .add-card h2 { font-size: 16px; color: #1a2e4a; margin-bottom: 12px; }
+    .add-card .row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .add-card input { flex: 1; min-width: 120px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    .add-card button { padding: 10px 20px; background: #1a2e4a; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    .goal-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 16px; }
+    .goal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .goal-name { font-size: 16px; font-weight: bold; color: #1a2e4a; }
+    .goal-delete { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 16px; }
+    .progress-bar { background: #f0f2f5; height: 12px; border-radius: 6px; overflow: hidden; margin-bottom: 8px; }
+    .progress-fill { background: #27ae60; height: 100%; transition: width 0.3s; }
+    .goal-stats { display: flex; justify-content: space-between; font-size: 13px; color: #888; margin-bottom: 12px; }
+    .update-row { display: flex; gap: 8px; }
+    .update-row input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+    .update-row button { padding: 8px 14px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
+    .empty { text-align: center; color: #888; padding: 40px 20px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-top">
+      <h1>MyBudgetPlan</h1>
+      <div class="header-links">
+        <a href="/profile">Profile</a>
+        <a href="/logout">Logout</a>
+      </div>
+    </div>
+    <nav>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/budget">Budget</a>
+      <a href="/goals" class="active">Goals</a>
+      <a href="/networth">Net Worth</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="add-card">
+      <h2>Create new goal</h2>
+      <div class="row">
+        <input type="text" id="goal-name" placeholder="Goal name (e.g. New Car)">
+        <input type="number" id="goal-target" placeholder="Target amount" min="1">
+        <input type="date" id="goal-date">
+        <button onclick="addGoal()">Add Goal</button>
+      </div>
+    </div>
+
+    <div id="goals-list">
+      {% for goal in goals %}
+      <div class="goal-card" data-id="{{ goal.id }}">
+        <div class="goal-header">
+          <div class="goal-name">{{ goal.name }}</div>
+          <button class="goal-delete" onclick="deleteGoal('{{ goal.id }}', this)">✕</button>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: {{ ((goal.current_amount / goal.target_amount * 100) if goal.target_amount > 0 else 0) | round(1) }}%"></div>
+        </div>
+        <div class="goal-stats">
+          <span>${{ "{:,.2f}".format(goal.current_amount) }} saved of ${{ "{:,.2f}".format(goal.target_amount) }}</span>
+          <span>{{ ((goal.current_amount / goal.target_amount * 100) if goal.target_amount > 0 else 0) | round(1) }}%</span>
+        </div>
+        <div class="goal-stats" style="margin-bottom: 12px;">
+          <span style="color: #e74c3c;">${{ "{:,.2f}".format(goal.target_amount - goal.current_amount) }} remaining</span>
+          {% if goal.target_date %}<span>by {{ goal.target_date }}</span>{% endif %}
+        </div>
+        <div class="update-row">
+          <input type="number" placeholder="Add contribution amount" id="amount-{{ goal.id }}">
+          <button onclick="addContribution('{{ goal.id }}')">+ Add</button>
+        </div>
+        <button onclick="toggleHistory('{{ goal.id }}')" style="background: none; border: none; color: #1a2e4a; font-size: 13px; cursor: pointer; margin-top: 12px; padding: 0;">View contribution history ▼</button>
+        <div id="history-{{ goal.id }}" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid #eee;"></div>
+      </div>
+      {% endfor %}
+
+      {% if goals|length == 0 %}
+      <div class="empty">No goals yet. Create your first one above to start saving!</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <script>
+    function addGoal() {
+      var name = document.getElementById('goal-name').value;
+      var target = parseFloat(document.getElementById('goal-target').value);
+      var date = document.getElementById('goal-date').value;
+      if (!name || !target) { alert('Please enter a name and target amount'); return; }
+      fetch('/save_goal', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name, target_amount: target, target_date: date || null})
+      })
+      .then(r => r.json())
+      .then(() => location.reload());
+    }
+
+    function addContribution(id) {
+      var amount = parseFloat(document.getElementById('amount-' + id).value);
+      if (!amount || amount <= 0) { alert('Enter a valid amount'); return; }
+      fetch('/update_goal', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: id, contribution: amount})
+      })
+      .then(r => r.json())
+      .then(() => location.reload());
+    }
+
+    function toggleHistory(id) {
+      var el = document.getElementById('history-' + id);
+      if (el.style.display === 'none') {
+        fetch('/get_contributions/' + id)
+          .then(r => r.json())
+          .then(contributions => {
+            if (contributions.length === 0) {
+              el.innerHTML = '<p style="color: #888; font-size: 13px;">No contributions yet</p>';
+            } else {
+              var html = '<div style="font-size: 13px;">';
+              contributions.forEach(c => {
+                var date = new Date(c.created_at).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'});
+                html += '<div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0;"><span>' + date + '</span><span style="color: #27ae60; font-weight: bold;">+$' + c.amount.toFixed(2) + '</span></div>';
+              });
+              html += '</div>';
+              el.innerHTML = html;
+            }
+            el.style.display = 'block';
+          });
+      } else {
+        el.style.display = 'none';
+      }
+    }
+
+    function deleteGoal(id, btn) {
+      if (!confirm('Delete this goal?')) return;
+      fetch('/delete_goal', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: id})
+      })
+      .then(r => r.json())
+      .then(() => btn.closest('.goal-card').remove());
+    }
+  </script>
+</body>
+</html>

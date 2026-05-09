@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Net Worth - MyBudgetPlan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { background-color: #f0f2f5; color: #333; }
+    header { background-color: #1a2e4a; color: white; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; }
+    .header-top h1 { font-size: 22px; }
+    .header-links { display: flex; gap: 20px; }
+    .header-links a { color: white; text-decoration: none; font-size: 14px; opacity: 0.8; }
+    nav { background: rgba(0,0,0,0.2); display: flex; gap: 4px; padding: 0 24px; }
+    nav a { color: white; text-decoration: none; padding: 12px 18px; font-size: 14px; opacity: 0.7; }
+    nav a.active { opacity: 1; border-bottom: 3px solid #2ecc71; }
+    .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+    .networth-hero { background: #1a2e4a; color: white; border-radius: 16px; padding: 40px 20px; text-align: center; margin-bottom: 24px; }
+    .networth-hero p { font-size: 14px; opacity: 0.7; margin-bottom: 8px; }
+    .networth-hero .amount { font-size: 56px; font-weight: bold; }
+    .networth-hero .amount.positive { color: #2ecc71; }
+    .networth-hero .amount.negative { color: #e74c3c; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .card h2 { font-size: 18px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 3px solid; }
+    .assets h2 { border-color: #27ae60; color: #27ae60; }
+    .liabilities h2 { border-color: #e74c3c; color: #e74c3c; }
+    .item-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .item-row input[type="text"] { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    .item-row input[type="number"] { width: 110px; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+    .remove-btn { background: #fee; color: #e74c3c; border: 1px solid #e74c3c; border-radius: 6px; padding: 6px 10px; cursor: pointer; font-size: 12px; }
+    .add-btn { background: none; border: 1px dashed #aaa; border-radius: 6px; padding: 8px; width: 100%; cursor: pointer; color: #888; font-size: 13px; margin-top: 8px; }
+    .add-btn:hover { background: #f9f9f9; }
+    .section-total { text-align: right; font-weight: bold; font-size: 16px; margin-top: 12px; padding-top: 10px; border-top: 1px solid #eee; }
+    @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-top">
+      <h1>MyBudgetPlan</h1>
+      <div class="header-links">
+        <a href="/profile">Profile</a>
+        <a href="/logout">Logout</a>
+      </div>
+    </div>
+    <nav>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/budget">Budget</a>
+      <a href="/goals">Goals</a>
+      <a href="/networth" class="active">Net Worth</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="networth-hero">
+      <p>Your Net Worth</p>
+      <div class="amount {% if net_worth >= 0 %}positive{% else %}negative{% endif %}">
+        ${{ "{:,.2f}".format(net_worth) }}
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card assets">
+        <h2>Assets</h2>
+        <div id="asset-list">
+          {% for item in items %}{% if item.type == 'asset' %}
+          <div class="item-row" data-id="{{ item.id }}">
+            <input type="text" value="{{ item.name }}" readonly>
+            <input type="number" value="{{ item.amount }}" readonly>
+            <button class="remove-btn" onclick="removeItem('{{ item.id }}', this)">✕</button>
+          </div>
+          {% endif %}{% endfor %}
+        </div>
+        <button class="add-btn" onclick="addItem('asset')">+ Add Asset</button>
+        <div class="section-total" style="color: #27ae60;">Total: $<span id="asset-total">{{ "{:,.2f}".format(total_assets) }}</span></div>
+      </div>
+
+      <div class="card liabilities">
+        <h2>Liabilities</h2>
+        <div id="liability-list">
+          {% for item in items %}{% if item.type == 'liability' %}
+          <div class="item-row" data-id="{{ item.id }}">
+            <input type="text" value="{{ item.name }}" readonly>
+            <input type="number" value="{{ item.amount }}" readonly>
+            <button class="remove-btn" onclick="removeItem('{{ item.id }}', this)">✕</button>
+          </div>
+          {% endif %}{% endfor %}
+        </div>
+        <button class="add-btn" onclick="addItem('liability')">+ Add Liability</button>
+        <div class="section-total" style="color: #e74c3c;">Total: $<span id="liability-total">{{ "{:,.2f}".format(total_liabilities) }}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function addItem(type) {
+      var name = prompt('Name (e.g. ' + (type === 'asset' ? 'Car, Savings, House' : 'Credit Card, Student Loan') + '):');
+      if (!name) return;
+      var amount = parseFloat(prompt('Amount in dollars:'));
+      if (!amount || amount <= 0) return;
+      fetch('/save_networth', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({type: type, name: name, amount: amount})
+      })
+      .then(r => r.json())
+      .then(() => location.reload());
+    }
+
+    function removeItem(id, btn) {
+      if (!confirm('Remove this item?')) return;
+      fetch('/delete_networth', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({id: id})
+      })
+      .then(r => r.json())
+      .then(() => location.reload());
+    }
+  </script>
+</body>
+</html>

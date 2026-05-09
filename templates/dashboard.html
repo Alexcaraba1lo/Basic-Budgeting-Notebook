@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard - MyBudgetPlan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
+    body { background-color: #f0f2f5; color: #333; }
+    header { background-color: #1a2e4a; color: white; }
+    .header-top { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; }
+    .header-top h1 { font-size: 22px; }
+    .header-links { display: flex; gap: 20px; }
+    .header-links a { color: white; text-decoration: none; font-size: 14px; opacity: 0.8; }
+    nav { background: rgba(0,0,0,0.2); display: flex; gap: 4px; padding: 0 24px; }
+    nav a { color: white; text-decoration: none; padding: 12px 18px; font-size: 14px; opacity: 0.7; }
+    nav a.active { opacity: 1; border-bottom: 3px solid #2ecc71; }
+    .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+    .welcome { text-align: center; margin-bottom: 30px; }
+    .welcome h2 { font-size: 22px; color: #1a2e4a; margin-bottom: 6px; }
+    .welcome p { color: #888; font-size: 15px; font-style: italic; }
+    .leftover-hero { background: #1a2e4a; color: white; border-radius: 16px; padding: 40px 20px; text-align: center; margin-bottom: 24px; }
+    .leftover-hero p { font-size: 14px; opacity: 0.7; margin-bottom: 8px; }
+    .leftover-hero .amount { font-size: 56px; font-weight: bold; }
+    .leftover-hero .amount.positive { color: #2ecc71; }
+    .leftover-hero .amount.negative { color: #e74c3c; }
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 4px solid; }
+    .stat-card.income { border-color: #27ae60; }
+    .stat-card.bills { border-color: #e74c3c; }
+    .stat-card.savings { border-color: #2980b9; }
+    .stat-card.debt { border-color: #e67e22; }
+    .stat-card .label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .stat-card .value { font-size: 24px; font-weight: bold; color: #333; }
+    .summary-card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-top: 24px; }
+    .summary-card a { text-decoration: none; }
+    .summary-card h2 { font-size: 16px; color: #1a2e4a; margin-bottom: 16px; }
+    @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-top">
+      <h1>MyBudgetPlan</h1>
+      <div class="header-links">
+        <a href="/profile">Profile</a>
+        <a href="/logout">Logout</a>
+      </div>
+    </div>
+    <nav>
+      <a href="/dashboard" class="active">Dashboard</a>
+      <a href="/budget">Budget</a>
+      <a href="/goals">Goals</a>
+      <a href="/networth">Net Worth</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="welcome">
+      <h2>Welcome back, {{ session.name }}!</h2>
+      <p id="motivation"></p>
+    </div>
+
+    <div class="leftover-hero">
+      <p>Left over this month</p>
+      <div class="amount {% if stats.leftover >= 0 %}positive{% else %}negative{% endif %}">
+        ${{ "{:,.2f}".format(stats.leftover) }}
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card income">
+        <div class="label">Income</div>
+        <div class="value">${{ "{:,.2f}".format(stats.income) }}</div>
+      </div>
+      <div class="stat-card bills">
+        <div class="label">Bills</div>
+        <div class="value">${{ "{:,.2f}".format(stats.bills) }}</div>
+      </div>
+      <div class="stat-card savings">
+        <div class="label">Savings</div>
+        <div class="value">${{ "{:,.2f}".format(stats.savings) }}</div>
+      </div>
+      <div class="stat-card debt">
+        <div class="label">Debt</div>
+        <div class="value">${{ "{:,.2f}".format(stats.debt) }}</div>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <a href="/networth"><h2>Your Net Worth →</h2></a>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px;">Total Net Worth</div>
+          <div style="font-size: 32px; font-weight: bold; color: {% if net_worth >= 0 %}#27ae60{% else %}#e74c3c{% endif %};">
+            ${{ "{:,.2f}".format(net_worth) }}
+          </div>
+        </div>
+        <div style="text-align: right; font-size: 13px; color: #888;">
+          <div>Assets: <span style="color: #27ae60; font-weight: bold;">${{ "{:,.2f}".format(total_assets) }}</span></div>
+          <div>Liabilities: <span style="color: #e74c3c; font-weight: bold;">${{ "{:,.2f}".format(total_liabilities) }}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <a href="/goals"><h2>Your Savings Goals →</h2></a>
+      {% if not goals %}
+      <p style="color: #888; font-size: 14px;">No goals yet. <a href="/goals" style="color: #1a2e4a; font-weight: bold;">Create your first goal</a></p>
+      {% endif %}
+      {% for goal in goals %}
+      <div style="margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+          <span style="font-weight: bold; font-size: 14px;">{{ goal.name }}</span>
+          <span style="font-size: 13px; color: #888;">${{ "{:,.2f}".format(goal.current_amount) }} / ${{ "{:,.2f}".format(goal.target_amount) }}</span>
+        </div>
+        <div style="background: #f0f2f5; height: 8px; border-radius: 4px; overflow: hidden;">
+          <div style="background: #27ae60; height: 100%; width: {{ ((goal.current_amount / goal.target_amount * 100) if goal.target_amount > 0 else 0) | round(1) }}%;"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <script>
+    var messages = [
+      "Every dollar tracked is a dollar earned.",
+      "Small budgets build big futures.",
+      "You can't manage what you don't measure.",
+      "The best time to start budgeting was yesterday. The second best time is now.",
+      "A budget is telling your money where to go instead of wondering where it went.",
+      "Discipline today, freedom tomorrow.",
+      "Wealth is built one budget at a time.",
+      "Track it. Plan it. Win it.",
+      "Your future self will thank you for budgeting today.",
+      "Money flows where attention goes.",
+      "Be the boss of your money, not the other way around.",
+      "Financial freedom starts with a single budget.",
+      "Stop scrolling. Start budgeting.",
+      "Boring builds wealth. Exciting builds debt.",
+      "Cash flow is freedom.",
+      "Every check-in moves you closer to your goal."
+    ];
+    document.getElementById('motivation').textContent = messages[Math.floor(Math.random() * messages.length)];
+  </script>
+</body>
+</html>
