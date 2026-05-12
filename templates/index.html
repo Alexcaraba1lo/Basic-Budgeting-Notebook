@@ -164,13 +164,20 @@
         calculate();
     }
 
-    function saveItem(el) {
-        var row = el.closest('.item-row');
-        var section = row.closest('[id$="-list"]').id.replace('-list', '');
-        var name = row.querySelector('input[type="text"]').value;
-        var amount = parseFloat(row.querySelector('input[type="number"]').value) || 0;
-        if (!name || !amount) return;
-        if (row.dataset.id) return;
+function saveItem(el) {
+    var row = el.closest('.item-row');
+    var section = row.closest('[id$="-list"]').id.replace('-list', '');
+    var name = row.querySelector('input[type="text"]').value;
+    var amount = parseFloat(row.querySelector('input[type="number"]').value) || 0;
+    if (!name || !amount) return;
+    
+    if (row.dataset.id) {
+        fetch('/update_item', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id: row.dataset.id, name: name, amount: amount})
+        });
+    } else {
         fetch('/save_item', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -179,6 +186,7 @@
         .then(r => r.json())
         .then(data => { if (data.id) row.dataset.id = data.id; });
     }
+}
 
     function removeItem(btn) {
         var row = btn.parentElement;

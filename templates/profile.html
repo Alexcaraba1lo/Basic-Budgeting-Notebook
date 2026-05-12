@@ -3,7 +3,13 @@
 <head>
   <title>Profile - MyBudgetPlan</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
+   <link rel="manifest" href="/static/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MyBudgetPlan">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
+  <meta name="theme-color" content="#1a2e4a">
+ <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
     body { background-color: #f0f2f5; color: #333; }
     header { background-color: #1a2e4a; color: white; padding: 20px; text-align: center; position: relative; }
@@ -58,8 +64,8 @@
 
     <div class="card">
       <h2>Danger Zone</h2>
-      <p style="font-size: 13px; color: #888; margin-bottom: 12px;">Deleting your account will permanently remove all your budget data. This cannot be undone.</p>
-      <form method="POST" onsubmit="return confirm('Are you sure you want to delete your account? This cannot be undone.');">
+        <p style="font-size: 13px; color: #888; margin-bottom: 12px;">Deleting your account will permanently remove all your data. <strong>You will not be able to sign up again with this email.</strong> This cannot be undone.</p>
+      <form method="POST" onsubmit="return confirm('Are you sure? This deletes all your data AND prevents you from re-signing up with this email. This cannot be undone.');">
         <input type="hidden" name="action" value="delete_account">
         <button type="submit" class="danger">Delete My Account</button>
       </form>
